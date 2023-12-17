@@ -1,0 +1,6 @@
+cluster.name: "es_cluster"
+node.name: "es_node_2" # Change to "es_node_3" for es_service_3
+network.host: 0.0.0.0
+http.port: 9200
+discovery.seed_hosts: ["es_container_1", "es_container_2", "es_container_3"]
+cluster.initial_master_nodes: ["es_node_1", "es_node_2"]

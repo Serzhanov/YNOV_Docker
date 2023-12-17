@@ -1,0 +1,51 @@
+version: '3.8'
+services:
+  es_service_1:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.2
+    container_name: es_container_1
+    volumes:
+      - es-data-es01:/usr/share/elasticsearch/data
+    environment:
+      - discovery.seed_hosts=es_container_1,es_container_2,es_container_3
+    ports:
+      - 9200:9200
+      - 9300:9300
+
+  es_service_2:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.2
+    container_name: es_container_2
+    environment:
+      - discovery.seed_hosts=es_container_1,es_container_2,es_container_3
+    volumes:
+      - es-data-es02:/usr/share/elasticsearch/data
+    ports:
+      - 9201:9200
+      - 9301:9300
+
+  es_service_3:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.2
+    container_name: es_container_3
+    environment:
+      - discovery.seed_hosts=es_container_1,es_container_2,es_container_3
+    volumes:
+      - es-data-es03:/usr/share/elasticsearch/data
+    ports:
+      - 9202:9200
+      - 9302:9300
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.10.2
+    container_name: kibana
+    depends_on:
+      - es_service_1
+      - es_service_2
+      - es_service_3
+    environment:
+      - ELASTICSEARCH_HOSTS=["http://es_container_1:9200","http://es_container_2:9200","http://es_container_3:9200"]
+    ports:
+      - 5601:5601
+
+volumes:
+  es-data-es01: {}
+  es-data-es02: {}
+  es-data-es03: {}
