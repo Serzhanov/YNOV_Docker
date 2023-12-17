@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  db:
+    image: mariadb_ynov
+    container_name: ynov_db
+    restart: always
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./backups:/backups
+    environment:
+      MYSQL_DATABASE: ynovdb
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+      MYSQL_ALLOW_EMPTY_PASSWORD: 'no'
+      MYSQL_ROOT_PASSWORD: admin
+    networks:
+      - backend_network  # Connect the db service to the backend network
+
+  wordpress:
+    image: nurbek21312313/wp-app
+    container_name: ynov_wordpress
+    restart: always
+    depends_on:
+      - db
+    ports:
+      - "80:80"
+    volumes:
+      - ./wp_data:/var/www/html
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_NAME: ynovdb
+      WORDPRESS_DB_USER: user
+      WORDPRESS_DB_PASSWORD: password
+    networks:
+      - frontend_network  # Connect the wordpress service to the frontend network
+      - backend_network   # Connect the wordpress service to the backend network
+
+networks:
+  frontend_network:
+  backend_network:
+
+volumes:
+  db_data: {}
