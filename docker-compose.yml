@@ -1,51 +1,87 @@
-version: '3.8'
+version: '2.2'
 services:
-  es_service_1:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.2
-    container_name: es_container_1
-    volumes:
-      - es-data-es01:/usr/share/elasticsearch/data
+  es01:
+    image: docker.elastic.co/elasticsearch/elasticsearch:${ES_VERSION}
+    container_name: es01
     environment:
-      - discovery.seed_hosts=es_container_1,es_container_2,es_container_3
+      - node.name=es01
+      - cluster.name=es-docker-cluster
+      - discovery.seed_hosts=es02,es03
+      - cluster.initial_master_nodes=es01,es02,es03
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - data01:/usr/share/elasticsearch/data
+      - ./es-cluster/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
     ports:
       - 9200:9200
-      - 9300:9300
-
-  es_service_2:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.2
-    container_name: es_container_2
+    networks:
+      - elastic
+  es02:
+    image: docker.elastic.co/elasticsearch/elasticsearch:${ES_VERSION}
+    container_name: es02
     environment:
-      - discovery.seed_hosts=es_container_1,es_container_2,es_container_3
+      - node.name=es02
+      - cluster.name=es-docker-cluster
+      - discovery.seed_hosts=es01,es03
+      - cluster.initial_master_nodes=es01,es02,es03
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
     volumes:
-      - es-data-es02:/usr/share/elasticsearch/data
-    ports:
-      - 9201:9200
-      - 9301:9300
-
-  es_service_3:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.2
-    container_name: es_container_3
+      - data02:/usr/share/elasticsearch/data
+      - ./es-cluster/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+    networks:
+      - elastic
+  es03:
+    image: docker.elastic.co/elasticsearch/elasticsearch:${ES_VERSION}
+    container_name: es03
+    
     environment:
-      - discovery.seed_hosts=es_container_1,es_container_2,es_container_3
+      - node.name=es03
+      - cluster.name=es-docker-cluster
+      - discovery.seed_hosts=es01,es02
+      - cluster.initial_master_nodes=es01,es02,es03
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
     volumes:
-      - es-data-es03:/usr/share/elasticsearch/data
-    ports:
-      - 9202:9200
-      - 9302:9300
+      - data03:/usr/share/elasticsearch/data
+      - ./es-cluster/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+    networks:
+      - elastic
 
-  kibana:
-    image: docker.elastic.co/kibana/kibana:7.10.2
-    container_name: kibana
-    depends_on:
-      - es_service_1
-      - es_service_2
-      - es_service_3
-    environment:
-      - ELASTICSEARCH_HOSTS=["http://es_container_1:9200","http://es_container_2:9200","http://es_container_3:9200"]
+  kib01:
+    image: docker.elastic.co/kibana/kibana:${ES_VERSION}
+    container_name: kib01
     ports:
       - 5601:5601
+    volumes:
+      - ./es-cluster/kibana.yml:/usr/share/kibana/config/kibana.yml
+    environment:
+      ELASTICSEARCH_URL: http://es01:9200
+      ELASTICSEARCH_HOSTS: '["http://es01:9200","http://es02:9200","http://es03:9200"]'
+    networks:
+      - elastic
 
 volumes:
-  es-data-es01: {}
-  es-data-es02: {}
-  es-data-es03: {}
+  data01:
+    driver: local
+  data02:
+    driver: local
+  data03:
+    driver: local
+
+networks:
+  elastic:
+    driver: bridge
