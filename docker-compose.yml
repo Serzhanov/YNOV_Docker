@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   db:
-    image: mariadb_ynov
+    image: nurbek21312313/mariadb_ynov
     container_name: ynov_db
     restart: always
     volumes:
